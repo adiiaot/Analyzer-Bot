@@ -1,6 +1,8 @@
 # Prompt files (internal reference, not for public)
 DEEPSEEK_BOT_PROMPT.md
 DEEPSEEK_DASHBOARD_PROMPT.md
+OPENCODE_BOT_SCREENSHOT_PROMPT.md
+OPENCODE_DASHBOARD_SCREENSHOT_PROMPT.md
 QUICK_START_GUIDE.md
 
 # Environment variables

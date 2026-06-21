@@ -1,10 +1,11 @@
 from telegram import Update, BotCommand, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import logging
-from app.signal_generator import MrPFXSignalGenerator
+from app.signal_generator import SignalGenerator
 from app.firebase_manager import FirebaseManager
 from app.tradingview_client import TradingViewClient
 from app.models import TradeLog, ResultEnum
+from app.services.multi_model_pipeline import MultiModelPipeline
 from config import Config
 from utils.validators import validate_trade_args
 
@@ -16,15 +17,17 @@ class TelegramBotHandler:
     def __init__(self):
         self.token = Config.TELEGRAM_BOT_TOKEN
         self.tv_client = TradingViewClient()
-        self.signal_gen = MrPFXSignalGenerator(self.tv_client)
+        self.signal_gen = SignalGenerator(self.tv_client)
         self.db = FirebaseManager()
+        self.pipeline = MultiModelPipeline(self.signal_gen)
 
     async def setup_commands(self, app: Application):
         commands = [
-            BotCommand('signal', 'Generate XAU/USD trading signal'),
+            BotCommand('signal', 'Generate signal from API data'),
+            BotCommand('analyze', 'Upload chart for dual-verified signal'),
             BotCommand('log_trade', 'Log a completed trade'),
             BotCommand('stats', 'View trading statistics'),
-            BotCommand('dashboard', 'Get link to web dashboard'),
+            BotCommand('dashboard', 'Open web dashboard'),
             BotCommand('help', 'Show all commands'),
         ]
         await app.bot.set_my_commands(commands)
@@ -172,7 +175,8 @@ class TelegramBotHandler:
         help_text = """
 🤖 **Analyzer Bot - Commands**
 ━━━━━━━━━━━━━━━━━━━━━━
-/signal - Generate XAU/USD trading signal
+/signal - Generate signal from API data
+/analyze - Upload chart for dual-verified signal
 /log_trade - Log a completed trade
 /stats - View trading statistics
 /dashboard - Open web dashboard
@@ -196,6 +200,117 @@ class TelegramBotHandler:
             text=help_text,
             parse_mode='Markdown'
         )
+
+    async def analyze_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        try:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="""📊 **Chart Analysis Mode**
+
+Please upload a XAU/USD chart screenshot for advanced verification.
+
+The bot will:
+1. Analyze your chart visually (support/resistance levels, patterns, trend)
+2. Compare with TradingView API data
+3. Generate a dual-verified signal with confidence score
+
+Simply send the chart image and I'll process it!""",
+                parse_mode='Markdown'
+            )
+            logger.info(f"User {update.effective_user.id} requested chart analysis")
+        except Exception as e:
+            logger.error(f"Error in analyze command: {str(e)}")
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="❌ Error starting analysis mode"
+            )
+
+    async def handle_screenshot(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        try:
+            if not update.message.photo:
+                return
+
+            user_id = update.effective_user.id
+            logger.info(f"User {user_id} uploaded screenshot")
+
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="⏳ Processing chart with multi-model AI (Vision + API verification)...",
+                parse_mode='Markdown'
+            )
+
+            photo = update.message.photo[-1]
+            file = await context.bot.get_file(photo.file_id)
+
+            if file.file_size > Config.MAX_SCREENSHOT_SIZE_MB * 1024 * 1024:
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=f"❌ Screenshot too large (max {Config.MAX_SCREENSHOT_SIZE_MB}MB)"
+                )
+                return
+
+            import base64
+            file_data = await file.download_as_bytearray()
+            image_base64 = base64.b64encode(file_data).decode()
+
+            result = await self.pipeline.process_with_screenshot(
+                api_data={},
+                screenshot_base64=image_base64
+            )
+
+            if result['success']:
+                response = self._format_verified_signal_message(result)
+            else:
+                response = f"❌ Analysis failed: {result.get('message', 'Unknown error')}"
+
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=response,
+                parse_mode='Markdown'
+            )
+
+        except Exception as e:
+            logger.error(f"Error processing screenshot: {str(e)}")
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"⚠️ Error processing screenshot: {str(e)}"
+            )
+
+    def _format_verified_signal_message(self, result: dict) -> str:
+        signal = result['signal']
+        verification = result['verification']
+
+        entries_text = "\n".join([
+            f"Entry {i+1}: ${entry.price} | TP: ${entry.tp} (+{entry.tp_pips}pips)"
+            for i, entry in enumerate(signal.entries)
+        ])
+
+        discrepancies_text = "\n".join(verification.get('discrepancies', ['None']))
+
+        message = f"""
+🎯 **XAU/USD VERIFIED SIGNAL** ✅
+━━━━━━━━━━━━━━━━━━━━━━
+📈 Trend: **{signal.trend.value}**
+⏰ Time: {signal.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}
+
+**Entry Points:**
+{entries_text}
+
+📊 Support: ${signal.support_level}
+📊 Resistance: ${signal.resistance_level}
+
+**Verification Details:**
+🔍 Score: {verification['score']}/100
+📊 Data Source: {verification['data_source']}
+🎯 Confidence Boost: {verification.get('confidence_boost', 'N/A')}
+🤖 Chart Confidence: {verification.get('vision_confidence', 0):.1%}
+
+**Discrepancies Found:**
+{discrepancies_text}
+
+⏱️ Valid Until: {signal.valid_until.strftime('%H:%M:%S UTC')} (3 hours)
+        """
+        return message
 
     def _format_signal_message(self, signal) -> str:
         entries_text = "\n".join([
@@ -226,12 +341,15 @@ class TelegramBotHandler:
         app = Application.builder().token(self.token).build()
 
         app.add_handler(CommandHandler("signal", self.signal_command))
+        app.add_handler(CommandHandler("analyze", self.analyze_command))
         app.add_handler(CommandHandler("log_trade", self.log_trade_command))
         app.add_handler(CommandHandler("stats", self.stats_command))
         app.add_handler(CommandHandler("dashboard", self.dashboard_command))
         app.add_handler(CommandHandler("help", self.help_command))
 
+        app.add_handler(MessageHandler(filters.PHOTO, self.handle_screenshot))
+
         await self.setup_commands(app)
 
-        logger.info("Telegram bot starting...")
+        logger.info("Telegram bot started with screenshot analysis support")
         await app.run_polling()

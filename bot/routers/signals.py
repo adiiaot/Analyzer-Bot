@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.signal_generator import MrPFXSignalGenerator
+from app.signal_generator import SignalGenerator
 from app.tradingview_client import TradingViewClient
 from app.firebase_manager import FirebaseManager
 from app.models import SignalResponse, Signal
@@ -7,7 +7,7 @@ from app.models import SignalResponse, Signal
 router = APIRouter()
 
 tv_client = TradingViewClient()
-signal_gen = MrPFXSignalGenerator(tv_client)
+signal_gen = SignalGenerator(tv_client)
 db = FirebaseManager()
 
 

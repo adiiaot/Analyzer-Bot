@@ -9,7 +9,7 @@ from config import Config
 logger = logging.getLogger(__name__)
 
 
-class MrPFXSignalGenerator:
+class SignalGenerator:
 
     def __init__(self, tv_client: TradingViewClient):
         self.tv_client = tv_client

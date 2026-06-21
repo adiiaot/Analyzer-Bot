@@ -28,3 +28,16 @@ class Config:
 
     TRADINGVIEW_REQUESTS_LIMIT = 150
     TRADINGVIEW_REQUESTS_PER_DAY = 5
+
+    NVIDIA_MODEL_PROCESSOR = os.getenv('NVIDIA_MODEL_PROCESSOR', 'meta/llama-3.1-8b-instruct')
+    NVIDIA_MODEL_VISION = os.getenv('NVIDIA_MODEL_VISION', 'meta/llama-3.2-11b-vision-instruct')
+    NVIDIA_MODEL_STRATEGIST = os.getenv('NVIDIA_MODEL_STRATEGIST', 'meta/llama-3.3-70b-instruct')
+    NVIDIA_NIM_API_URL = os.getenv('NVIDIA_NIM_API_URL', 'https://integrate.api.nvidia.com/v1')
+    NVIDIA_NIM_API_KEY = os.getenv('NVIDIA_NIM_API_KEY')
+
+    MAX_SCREENSHOT_SIZE_MB = int(os.getenv('MAX_SCREENSHOT_SIZE_MB', '10'))
+    SCREENSHOT_CACHE_MINUTES = int(os.getenv('SCREENSHOT_CACHE_MINUTES', '5'))
+    VERIFICATION_THRESHOLD_SCORE = int(os.getenv('VERIFICATION_THRESHOLD_SCORE', '60'))
+    CONFIDENCE_BOOST_HIGH = int(os.getenv('CONFIDENCE_BOOST_HIGH', '15'))
+    CONFIDENCE_BOOST_MEDIUM = int(os.getenv('CONFIDENCE_BOOST_MEDIUM', '5'))
+    CONFIDENCE_PENALTY = int(os.getenv('CONFIDENCE_PENALTY', '10'))
