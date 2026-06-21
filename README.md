@@ -4,7 +4,7 @@ Production-grade **XAU/USD trading signal bot** for Telegram, powered by FastAPI
 
 ## Features
 
-- **Mr PFX Signal Engine** — 4-timeframe analysis (1H/4H trend, 15M S/R, 5M pullback, 1M entry confirmation)
+- **Signal Engine** — 4-timeframe analysis (1H/4H trend, 15M S/R, 5M pullback, 1M entry confirmation)
 - **Telegram Bot** — 5 commands: `/signal`, `/log_trade`, `/stats`, `/dashboard`, `/help`
 - **REST API** — Endpoints for signals, trades, and trading statistics
 - **Firebase Firestore** — Persistent storage for signals and trade logs
