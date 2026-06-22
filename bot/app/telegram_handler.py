@@ -13,6 +13,12 @@ logger = logging.getLogger(__name__)
 
 
 class TelegramBotHandler:
+    """Handles all Telegram bot interactions including commands and photo processing.
+
+    Registers 6 slash commands and a photo handler with python-telegram-bot.
+    Delegates signal generation, trade logging, and statistics to their respective
+    backend services.
+    """
 
     def __init__(self):
         self.token = Config.TELEGRAM_BOT_TOKEN
@@ -22,6 +28,7 @@ class TelegramBotHandler:
         self.pipeline = MultiModelPipeline(self.signal_gen)
 
     async def setup_commands(self, app: Application):
+        """Register slash commands with Telegram bot."""
         commands = [
             BotCommand('signal', 'Generate signal from API data'),
             BotCommand('analyze', 'Upload chart for dual-verified signal'),
@@ -33,6 +40,7 @@ class TelegramBotHandler:
         await app.bot.set_my_commands(commands)
 
     async def signal_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /signal — generate a signal from TradingView API data."""
         try:
             user_id = update.effective_user.id
             logger.info(f"User {user_id} requested signal")
@@ -67,6 +75,7 @@ class TelegramBotHandler:
             )
 
     async def log_trade_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /log_trade — record a completed trade with entry/exit prices."""
         try:
             args = context.args
 
@@ -125,6 +134,7 @@ class TelegramBotHandler:
             )
 
     async def stats_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /stats — display aggregated trading statistics."""
         try:
             stats = await self.db.calculate_stats()
 
@@ -155,6 +165,7 @@ class TelegramBotHandler:
             )
 
     async def dashboard_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /dashboard — send inline button linking to the web dashboard."""
         try:
             dashboard_url = "https://analyzer-dashboard.vercel.app"
 
@@ -172,6 +183,7 @@ class TelegramBotHandler:
             logger.error(f"Error in dashboard command: {str(e)}")
 
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /help — display all available commands and instructions."""
         help_text = """
 🤖 **Analyzer Bot - Commands**
 ━━━━━━━━━━━━━━━━━━━━━━
@@ -202,6 +214,7 @@ class TelegramBotHandler:
         )
 
     async def analyze_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /analyze — prompt user to upload a chart screenshot for vision-based analysis."""
         try:
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -226,6 +239,7 @@ Simply send the chart image and I'll process it!""",
             )
 
     async def handle_screenshot(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Process an uploaded chart screenshot through the multi-model pipeline."""
         try:
             if not update.message.photo:
                 return
@@ -277,6 +291,7 @@ Simply send the chart image and I'll process it!""",
             )
 
     def _format_verified_signal_message(self, result: dict) -> str:
+        """Format a dual-verified signal into a Markdown message string."""
         signal = result['signal']
         verification = result['verification']
 
@@ -313,6 +328,7 @@ Simply send the chart image and I'll process it!""",
         return message
 
     def _format_signal_message(self, signal) -> str:
+        """Format a standard (API-only) signal into a Markdown message string."""
         entries_text = "\n".join([
             f"Entry {i+1}: ${entry.price} | TP: ${entry.tp} (+{entry.tp_pips}pips) | {'Auto Close' if entry.auto_close else 'Manual'}"
             for i, entry in enumerate(signal.entries)
@@ -338,6 +354,7 @@ Simply send the chart image and I'll process it!""",
         return message
 
     async def start_bot(self):
+        """Build the PTB Application, register handlers, and start polling."""
         app = Application.builder().token(self.token).build()
 
         app.add_handler(CommandHandler("signal", self.signal_command))

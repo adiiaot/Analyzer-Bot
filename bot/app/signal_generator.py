@@ -10,6 +10,14 @@ logger = logging.getLogger(__name__)
 
 
 class SignalGenerator:
+    """Core signal generation engine implementing the 4-timeframe Mr PFX framework.
+
+    Pipeline:
+        1. 1H/4H — Trend determination via higher highs/lows detection
+        2. 15M  — Support/Resistance level identification via swing points
+        3. 5M   — Pullback detection with volatility check
+        4. 1M   — Entry confirmation via reversal candle patterns
+    """
 
     def __init__(self, tv_client: TradingViewClient):
         self.tv_client = tv_client
@@ -17,6 +25,7 @@ class SignalGenerator:
         self.pips_value = 0.01
 
     async def generate_signal(self) -> Tuple[Optional[Signal], str]:
+        """Main entry point. Runs all 4 analysis levels and returns a Signal or error."""
         try:
             trend, trend_confidence = await self._analyze_trend()
             if trend == TrendEnum.NEUTRAL:
@@ -57,6 +66,11 @@ class SignalGenerator:
             return None, f"Error: {str(e)}"
 
     async def _analyze_trend(self) -> Tuple[TrendEnum, float]:
+        """Level 1: Determine trend from 1H and 4H candles.
+
+        Requires both timeframes to agree on direction (UP/DOWN).
+        Returns NEUTRAL with 0 confidence if they disagree or data is missing.
+        """
         try:
             candles_1h = await self.tv_client.get_candles('1h', 10)
             candles_4h = await self.tv_client.get_candles('4h', 10)
@@ -83,6 +97,11 @@ class SignalGenerator:
             return TrendEnum.NEUTRAL, 0.0
 
     def _detect_trend_direction(self, df: pd.DataFrame) -> Tuple[TrendEnum, float]:
+        """Detect trend from a single timeframe's candle data.
+
+        Counts higher highs/lows (uptrend) vs lower highs/lows (downtrend).
+        Returns confidence as the proportion of candles showing aligned movement.
+        """
         if len(df) < 3:
             return TrendEnum.NEUTRAL, 0.0
 
@@ -119,6 +138,11 @@ class SignalGenerator:
         return TrendEnum.NEUTRAL, 0.0
 
     async def _find_levels(self) -> Tuple[Optional[float], Optional[float]]:
+        """Level 2: Identify support and resistance from 15M swing points.
+
+        Scans 20 candles for local minima (support) and local maxima (resistance).
+        Returns the most recent strong levels.
+        """
         try:
             candles = await self.tv_client.get_candles('15m', 20)
             if not candles or len(candles) < 5:
@@ -147,6 +171,12 @@ class SignalGenerator:
             return None, None
 
     async def _detect_pullback(self, support: float, resistance: float, trend: TrendEnum) -> bool:
+        """Level 3: Check if price is pulling back to a key level on 5M.
+
+        Conditions:
+        - Uptrend: price within 10 pips of support with low volatility
+        - Downtrend: price within 10 pips of resistance with low volatility
+        """
         try:
             candles = await self.tv_client.get_candles('5m', 15)
             if not candles:
@@ -178,12 +208,18 @@ class SignalGenerator:
             return False
 
     def _calculate_volatility(self, df: pd.DataFrame) -> float:
+        """Calculate normalized ATR-style volatility from candle data."""
         df_range = df['high'] - df['low']
         avg_range = df_range.mean()
         avg_close = df['close'].mean()
         return avg_range / avg_close if avg_close > 0 else 0
 
     async def _confirm_entry(self, support: float, resistance: float, trend: TrendEnum) -> Tuple[Optional[float], bool]:
+        """Level 4: Confirm entry point on 1M candles.
+
+        Looks for a reversal candle (pin bar or engulfing pattern).
+        Returns entry price with 1-pip buffer in the trend's direction.
+        """
         try:
             candles = await self.tv_client.get_candles('1m', 10)
             if not candles or len(candles) < 3:
@@ -214,6 +250,7 @@ class SignalGenerator:
             return None, False
 
     def _detect_reversal_candle(self, df: pd.DataFrame) -> bool:
+        """Detect reversal candle patterns: pin bar (small body + long wick) or engulfing."""
         if len(df) < 2:
             return False
 
@@ -243,6 +280,14 @@ class SignalGenerator:
         return False
 
     def _build_signal(self, trend: TrendEnum, entry_price: float, support: float, resistance: float) -> Signal:
+        """Build final Signal object with 4 stacked entries and take-profit levels.
+
+        Entry structure:
+        - Entry 1: entry_price, TP +20 pips, AUTO CLOSE
+        - Entry 2: entry_price - 5 pips, TP +40 pips, Manual
+        - Entry 3: entry_price - 10 pips, TP +60 pips, Manual
+        - Entry 4: entry_price - 15 pips, TP +80 pips, Manual
+        """
         entries = []
 
         tp_increments = [20, 40, 60, 80]

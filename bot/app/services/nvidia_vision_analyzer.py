@@ -11,6 +11,11 @@ logger = logging.getLogger(__name__)
 
 
 class NvidiaVisionAnalyzer:
+    """Analyse XAU/USD chart screenshots using the Nvidia NIM Llama 3.2 Vision model.
+
+    Caches results in-memory by MD5 hash with a configurable TTL to reduce
+    redundant API calls for identical screenshots.
+    """
 
     def __init__(self):
         self.api_url = Config.NVIDIA_NIM_API_URL
@@ -20,6 +25,15 @@ class NvidiaVisionAnalyzer:
         self.cache_ttl = Config.SCREENSHOT_CACHE_MINUTES * 60
 
     async def analyze_screenshot(self, image_base64: str) -> Dict:
+        """Send a base64-encoded screenshot to Nvidia Vision API and return parsed analysis.
+
+        Args:
+            image_base64: PNG chart screenshot encoded as base64 string.
+
+        Returns:
+            Dict with keys: current_price, support_levels, resistance_levels,
+            trend, pattern, rsi, volume_trend, observations, confidence, timestamp.
+        """
         cache_key = self._generate_cache_key(image_base64)
         if cache_key in self.cache:
             cached_result, cached_time = self.cache[cache_key]
@@ -110,9 +124,11 @@ Be precise with price levels. Return ONLY valid JSON, no other text."""
             return self._fallback_response()
 
     def _generate_cache_key(self, image_base64: str) -> str:
+        """Generate an MD5 hash of the image for cache keying."""
         return hashlib.md5(image_base64.encode()).hexdigest()
 
     def _fallback_response(self) -> Dict:
+        """Return a neutral analysis response when API calls fail."""
         return {
             'current_price': None,
             'support_levels': [],
@@ -127,6 +143,7 @@ Be precise with price levels. Return ONLY valid JSON, no other text."""
         }
 
     def clear_cache(self):
+        """Evict expired cache entries based on configured TTL."""
         now = datetime.utcnow()
         expired = [
             k for k, (_, t) in self.cache.items()

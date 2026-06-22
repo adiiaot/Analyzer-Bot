@@ -5,18 +5,21 @@ from enum import Enum
 
 
 class TrendEnum(str, Enum):
+    """Market trend direction detected by signal analysis."""
     UP = "UP"
     DOWN = "DOWN"
     NEUTRAL = "NEUTRAL"
 
 
 class ResultEnum(str, Enum):
+    """Outcome of a completed trade."""
     WIN = "win"
     LOSS = "loss"
     PENDING = "pending"
 
 
 class CandleData(BaseModel):
+    """Single OHLCV candlestick from TradingView."""
     time: int
     open: float
     high: float
@@ -26,6 +29,7 @@ class CandleData(BaseModel):
 
 
 class SignalEntry(BaseModel):
+    """One entry leg of a trading signal with take-profit target."""
     price: float = Field(..., description="Entry price")
     tp: float = Field(..., description="Take profit price")
     tp_pips: int = Field(..., description="TP in pips")
@@ -33,6 +37,7 @@ class SignalEntry(BaseModel):
 
 
 class Signal(BaseModel):
+    """Complete trading signal with 4 stacked entries and market context."""
     id: str
     timestamp: datetime
     trend: TrendEnum
@@ -46,12 +51,14 @@ class Signal(BaseModel):
 
 
 class SignalResponse(BaseModel):
+    """Response wrapper for signal generation requests."""
     success: bool
     signal: Optional[Signal] = None
     message: str
 
 
 class TradeLog(BaseModel):
+    """Payload for logging a completed trade."""
     entry_price: float
     exit_price: float
     quantity: float = 0.01
@@ -62,6 +69,7 @@ class TradeLog(BaseModel):
 
 
 class TradeLogResponse(BaseModel):
+    """Response returned after a trade is logged, includes calculated PnL."""
     id: str
     entry_price: float
     exit_price: float
@@ -73,6 +81,7 @@ class TradeLogResponse(BaseModel):
 
 
 class TradingStats(BaseModel):
+    """Aggregated trading performance statistics."""
     total_trades: int
     wins: int
     losses: int
@@ -86,6 +95,7 @@ class TradingStats(BaseModel):
 
 
 class TelegramMessage(BaseModel):
+    """Incoming Telegram message data."""
     message: str
     user_id: str
     timestamp: datetime

@@ -10,6 +10,13 @@ logger = logging.getLogger(__name__)
 
 
 class MultiModelPipeline:
+    """Coordinates API-based and vision-based signal generation into a single pipeline.
+
+    Supports two modes:
+    - API-only: generates a signal from TradingView data with no visual verification.
+    - API + Screenshot: runs both the TV API and Nvidia Vision model, then computes
+      an alignment score and adjusts confidence accordingly.
+    """
 
     def __init__(self, signal_generator: SignalGenerator):
         self.signal_gen = signal_generator
@@ -20,7 +27,7 @@ class MultiModelPipeline:
         self.strategist_model = Config.NVIDIA_MODEL_STRATEGIST
 
     async def process_api_only(self, api_data: Dict) -> Dict:
-        logger.info("Processing signal (API-only mode)")
+        """Generate a signal using TradingView API data alone (no screenshot)."""
 
         try:
             signal, message = await self.signal_gen.generate_signal()
@@ -58,7 +65,11 @@ class MultiModelPipeline:
         api_data: Dict,
         screenshot_base64: str
     ) -> Dict:
-        logger.info("Processing signal (API + Screenshot mode)")
+        """Run API signal + vision analysis, then compute an alignment score.
+
+        Returns unified result with verification details, discrepancies, and
+        a confidence-adjusted final score. Falls back to API-only on error.
+        """
 
         try:
             api_signal, api_message = await self.signal_gen.generate_signal()
@@ -120,6 +131,14 @@ class MultiModelPipeline:
         api_signal: object,
         vision_data: Dict
     ) -> Tuple[int, list, float]:
+        """Compare API signal values against vision-derived data.
+
+        Calculates a penalty-based score (0-100) by checking:
+        - Support / resistance level proximity (up to -15 each)
+        - Trend direction match (up to -20 or +10)
+        - Chart pattern presence (informational only)
+        - Screenshot confidence threshold (-20 if < 50%)
+        """
         score = 100
         discrepancies = []
 

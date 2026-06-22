@@ -4,6 +4,10 @@ from config import Config
 
 
 def setup_logging():
+    """Configure root logger with structured format and configurable level.
+
+    Reads LOG_LEVEL and DEBUG from Config. Outputs to stdout.
+    """
     log_level = getattr(logging, Config.LOG_LEVEL.upper(), logging.INFO)
 
     formatter = logging.Formatter(

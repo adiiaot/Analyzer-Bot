@@ -10,6 +10,11 @@ logger = logging.getLogger(__name__)
 
 
 class FirebaseManager:
+    """Singleton manager for Firestore database operations.
+
+    Handles persistence for signals, trade logs, and aggregated statistics.
+    Initialises Firebase Admin SDK once and reuses the client across all requests.
+    """
 
     _instance = None
 
@@ -20,6 +25,7 @@ class FirebaseManager:
         return cls._instance
 
     def _initialize(self):
+        """Initialise Firebase Admin SDK with service account credentials."""
         try:
             if not firebase_admin._apps:
                 creds = credentials.Certificate({
@@ -35,6 +41,14 @@ class FirebaseManager:
             logger.error(f"Firebase initialization error: {str(e)}")
 
     async def save_signal(self, signal: Signal) -> bool:
+        """Persist a generated signal to the 'signals' collection.
+
+        Args:
+            signal: Fully populated Signal object.
+
+        Returns:
+            True if saved successfully, False on error.
+        """
         try:
             self.db.collection('signals').document(signal.id).set({
                 'id': signal.id,
@@ -64,6 +78,14 @@ class FirebaseManager:
             return False
 
     async def get_signal(self, signal_id: str) -> Optional[Dict]:
+        """Retrieve a signal document by its ID.
+
+        Args:
+            signal_id: Unique signal identifier.
+
+        Returns:
+            Signal dict if found, None otherwise.
+        """
         try:
             doc = self.db.collection('signals').document(signal_id).get()
             return doc.to_dict() if doc.exists else None
@@ -72,6 +94,15 @@ class FirebaseManager:
             return None
 
     async def log_trade(self, trade: TradeLog, signal_id: Optional[str] = None) -> Dict:
+        """Record a completed trade with calculated PnL.
+
+        Args:
+            trade: TradeLog payload with entry/exit prices and result.
+            signal_id: Optional reference to the signal that triggered this trade.
+
+        Returns:
+            Dict with 'id', 'pnl', and 'pnl_percent' keys, or empty on error.
+        """
         try:
             trade_id = f"trade_{datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')}"
 
@@ -109,6 +140,11 @@ class FirebaseManager:
             return {}
 
     async def get_all_trades(self) -> List[Dict]:
+        """Retrieve all trades sorted by timestamp descending.
+
+        Returns:
+            List of trade dicts, or empty list on error.
+        """
         try:
             docs = self.db.collection('trades').order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
             return [doc.to_dict() for doc in docs]
@@ -117,6 +153,14 @@ class FirebaseManager:
             return []
 
     async def calculate_stats(self) -> Dict:
+        """Aggregate trading statistics from stored trades.
+
+        Computes: total trades, win/loss counts, win rate, P&L, profit factor,
+        average win/loss, and longest consecutive win/loss streaks.
+
+        Returns:
+            Dict matching TradingStats schema.
+        """
         try:
             trades = await self.get_all_trades()
 

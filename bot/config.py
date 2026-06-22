@@ -5,6 +5,39 @@ load_dotenv()
 
 
 class Config:
+    """Application configuration loaded from environment variables.
+
+    Attributes:
+        TELEGRAM_BOT_TOKEN: Bot token for Telegram API authentication.
+        TELEGRAM_CHAT_ID: Default chat ID for broadcasting signals.
+        TRADINGVIEW_API_KEY: RapidAPI key for TradingView data access.
+        TRADINGVIEW_API_HOST: RapidAPI host header value.
+        TRADINGVIEW_BASE_URL: Base URL for TradingView API endpoints.
+        FIREBASE_PROJECT_ID: Firebase project identifier.
+        FIREBASE_PRIVATE_KEY: Firebase service account private key.
+        FIREBASE_CLIENT_EMAIL: Firebase service account email.
+        FIREBASE_DATABASE_URL: Auto-derived Firestore database URL.
+        BOT_ENV: Deployment environment (development/production).
+        DEBUG: Enable debug mode and auto-reload.
+        LOG_LEVEL: Logging verbosity (DEBUG/INFO/WARNING/ERROR).
+        TRADING_PAIR: TradingView symbol for XAU/USD.
+        SIGNAL_VALIDITY_HOURS: How long a signal remains valid.
+        LOT_SIZE: Default trading lot size (0.01 = micro lot).
+        MAX_HOLD_TIME_MINUTES: Maximum position hold time for scalping.
+        TRADINGVIEW_REQUESTS_LIMIT: Monthly API request cap.
+        TRADINGVIEW_REQUESTS_PER_DAY: Approximate daily limit.
+        NVIDIA_MODEL_PROCESSOR: Nvidia model for data processing.
+        NVIDIA_MODEL_VISION: Nvidia vision model for chart analysis.
+        NVIDIA_MODEL_STRATEGIST: Nvidia model for strategic analysis.
+        NVIDIA_NIM_API_URL: Base URL for Nvidia NIM API.
+        NVIDIA_NIM_API_KEY: API key for Nvidia NIM.
+        MAX_SCREENSHOT_SIZE_MB: Max uploaded screenshot file size.
+        SCREENSHOT_CACHE_MINUTES: TTL for screenshot analysis cache.
+        VERIFICATION_THRESHOLD_SCORE: Minimum score for signal verification.
+        CONFIDENCE_BOOST_HIGH: Confidence boost for high alignment.
+        CONFIDENCE_BOOST_MEDIUM: Confidence boost for medium alignment.
+        CONFIDENCE_PENALTY: Confidence penalty for low alignment.
+    """
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
     TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 

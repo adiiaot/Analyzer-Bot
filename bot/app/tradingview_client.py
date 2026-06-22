@@ -8,6 +8,11 @@ logger = logging.getLogger(__name__)
 
 
 class TradingViewClient:
+    """Wrapper for TradingView Data API via RapidAPI.
+
+    Handles OHLCV candle data requests with built-in rate limiting.
+    Tracks request count against the free-tier monthly cap.
+    """
 
     def __init__(self):
         self.base_url = Config.TRADINGVIEW_BASE_URL
@@ -18,6 +23,15 @@ class TradingViewClient:
         self.rate_limit = Config.TRADINGVIEW_REQUESTS_LIMIT
 
     async def get_candles(self, timeframe: str, limit: int) -> Optional[List[CandleData]]:
+        """Fetch OHLCV candles from TradingView API.
+
+        Args:
+            timeframe: '1m', '5m', '15m', '1h', '4h', or '1d'.
+            limit: Number of candles to fetch (10-100).
+
+        Returns:
+            List of CandleData objects, or None on failure/rate-limit.
+        """
         if self.request_count >= self.rate_limit:
             logger.warning(f"Rate limit reached ({self.request_count}/{self.rate_limit})")
             return None
@@ -46,6 +60,7 @@ class TradingViewClient:
             return None
 
     def _parse_candles(self, data: dict) -> List[CandleData]:
+        """Parse TradingView API response into CandleData objects."""
         candles = []
         bars = data.get('bars', [])
 
@@ -63,6 +78,7 @@ class TradingViewClient:
         return candles
 
     def get_request_count(self) -> dict:
+        """Return TradingView API request statistics (used/limit/remaining)."""
         return {
             'used': self.request_count,
             'limit': self.rate_limit,

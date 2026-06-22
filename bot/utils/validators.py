@@ -3,6 +3,7 @@ from typing import Optional
 
 
 def validate_price(value: str) -> Optional[float]:
+    """Parse a string as a positive float price. Returns None on failure."""
     try:
         price = float(value)
         if price <= 0:
@@ -13,6 +14,11 @@ def validate_price(value: str) -> Optional[float]:
 
 
 def validate_trade_args(args: list) -> Optional[dict]:
+    """Parse and validate Telegram /log_trade arguments.
+
+    Expected format: entry:PRICE exit:PRICE result:win|loss
+    Returns a dict with parsed values, or None if invalid.
+    """
     parsed = {}
     for arg in args:
         if ':' not in arg:
