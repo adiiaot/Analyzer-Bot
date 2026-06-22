@@ -37,18 +37,18 @@ export const TradeAnalyzer = ({ trades, signals }: TradeAnalyzerProps) => {
   };
 
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+    <div className="bg-dark-card border border-dark-border rounded-card p-5">
       <div className="flex items-center gap-2 mb-4">
-        <h2 className="text-white font-bold text-lg">Trade Analysis (Nvidia AI)</h2>
+        <h2 className="text-text-primary font-bold text-lg">Trade Analysis</h2>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="text-slate-300 text-sm font-medium">Select Trade to Analyze</label>
+          <label className="text-text-secondary text-body font-medium">Select Trade to Analyze</label>
           <select
             value={selectedTrade?.id || ''}
             onChange={(e) => setSelectedTrade(trades.find(t => t.id === e.target.value) || null)}
-            className="w-full mt-2 bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white"
+            className="w-full mt-2 bg-dark-sidebar border border-dark-border rounded-input px-3 py-2 text-text-primary text-body focus:border-neon-green focus:outline-none"
           >
             <option value="">Choose a trade...</option>
             {trades.map(trade => (
@@ -62,7 +62,7 @@ export const TradeAnalyzer = ({ trades, signals }: TradeAnalyzerProps) => {
         <button
           onClick={handleAnalyze}
           disabled={!selectedTrade || isLoading}
-          className="w-full bg-yellow-500 hover:bg-yellow-600 disabled:bg-slate-600 text-slate-900 font-semibold py-2 rounded transition flex items-center justify-center gap-2"
+          className="w-full bg-neon-green hover:bg-neon-green-hover disabled:bg-dark-border text-dark-bg font-semibold py-2 rounded-btn transition flex items-center justify-center gap-2 text-body"
         >
           {isLoading ? (
             <>
@@ -75,7 +75,7 @@ export const TradeAnalyzer = ({ trades, signals }: TradeAnalyzerProps) => {
         </button>
 
         {analysis && (
-          <div className="bg-slate-700 border border-slate-600 rounded p-4 text-slate-300 text-sm whitespace-pre-wrap">
+          <div className="bg-dark-sidebar border border-dark-border rounded-card p-4 text-text-secondary text-body whitespace-pre-wrap">
             {analysis}
           </div>
         )}

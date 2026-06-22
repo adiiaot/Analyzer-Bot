@@ -44,10 +44,10 @@ export const TabsTrigger = ({
   return (
     <button
       onClick={() => setActiveTab(value)}
-      className={`flex-1 px-4 py-2 text-sm font-medium transition ${
+      className={`flex-1 px-4 py-2 text-small font-medium transition ${
         activeTab === value
-          ? 'bg-yellow-500 text-slate-900'
-          : 'text-slate-400 hover:text-slate-200'
+          ? 'bg-neon-green text-dark-bg'
+          : 'text-text-secondary hover:text-text-primary'
       }`}
     >
       {children}

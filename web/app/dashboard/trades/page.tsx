@@ -51,14 +51,14 @@ export default function TradesPage() {
   if (isLoading) return <Spinner />;
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-dark-bg">
       <Header />
       <div className="flex">
         <Sidebar />
         <main className="flex-1 p-6 space-y-6">
           <div>
-            <h1 className="text-3xl font-bold text-white">Trade Logs</h1>
-            <p className="text-slate-400">Complete history of all trades</p>
+            <h1 className="text-h1 text-text-primary">Trade Logs</h1>
+            <p className="text-text-secondary text-body">Complete history of all trades</p>
           </div>
 
           <TradeFilters onFilterChange={handleFilterChange} />

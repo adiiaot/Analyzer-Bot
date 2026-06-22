@@ -1,16 +1,18 @@
-from fastapi import APIRouter
+import logging
+from fastapi import APIRouter, Request
 from app.telegram_handler import TelegramBotHandler
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     tags=["Telegram"],
-    prefix="/api"
+    prefix="/telegram"
 )
 bot_handler = TelegramBotHandler()
 
 
-@router.post("/telegram")
+@router.post("")
 async def telegram_webhook(update: dict):
-    """Receive Telegram update via webhook and dispatch to handler.
-
-    Currently a stub — the bot runs in polling mode via start_bot().
-    """
+    """Receive Telegram update via webhook (not actively used — bot runs in polling mode)."""
+    logger.info("Received webhook update (stub)")
+    return {"status": "ok"}

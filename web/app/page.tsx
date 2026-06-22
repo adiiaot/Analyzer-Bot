@@ -8,14 +8,14 @@ export default function HomePage() {
   const router = useRouter();
 
   return (
-    <main className="min-h-screen bg-slate-900 flex items-center justify-center">
+    <main className="min-h-screen bg-dark-bg flex items-center justify-center">
       <div className="text-center space-y-6 max-w-md">
-        <TrendingUp className="w-16 h-16 text-yellow-500 mx-auto" />
-        <h1 className="text-4xl font-bold text-white">Analyzer Bot</h1>
-        <p className="text-slate-400">XAU/USD Trading Dashboard</p>
+        <TrendingUp className="w-16 h-16 text-neon-green mx-auto" />
+        <h1 className="text-4xl font-bold text-text-primary">Analyzer Bot</h1>
+        <p className="text-text-secondary">AI-Powered Trading Intelligence</p>
         <button
           onClick={() => router.push('/dashboard')}
-          className="bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold px-8 py-3 rounded-lg transition"
+          className="bg-neon-green hover:bg-neon-green-hover text-dark-bg font-bold px-8 py-3 rounded-btn transition"
         >
           Enter Dashboard
         </button>

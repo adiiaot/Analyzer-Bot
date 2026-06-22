@@ -36,12 +36,12 @@ export const TradeTable = ({ trades, onAnalyze }: TradeTableProps) => {
   };
 
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+    <div className="bg-dark-card border border-dark-border rounded-card p-5">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-white font-bold text-lg">Trade Logs</h2>
+        <h2 className="text-text-primary font-bold text-lg">Trade Logs</h2>
         <button
           onClick={exportCSV}
-          className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1 rounded text-sm"
+          className="flex items-center gap-2 bg-dark-sidebar border border-dark-border hover:bg-dark-card text-text-secondary px-3 py-1.5 rounded-btn text-small transition"
         >
           <Download className="w-4 h-4" />
           Export CSV
@@ -49,55 +49,53 @@ export const TradeTable = ({ trades, onAnalyze }: TradeTableProps) => {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-body">
           <thead>
-            <tr className="border-b border-slate-700">
-              <th className="text-left py-3 px-4 text-slate-400 font-semibold">Date</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-semibold">Entry</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-semibold">Exit</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-semibold">P&L</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-semibold">Result</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-semibold">Hold</th>
-              <th className="text-left py-3 px-4 text-slate-400 font-semibold">Action</th>
+            <tr className="border-b border-dark-border">
+              <th className="text-left py-3 px-4 text-text-secondary text-label font-semibold uppercase tracking-wider">Date</th>
+              <th className="text-left py-3 px-4 text-text-secondary text-label font-semibold uppercase tracking-wider">Entry</th>
+              <th className="text-left py-3 px-4 text-text-secondary text-label font-semibold uppercase tracking-wider">Exit</th>
+              <th className="text-right py-3 px-4 text-text-secondary text-label font-semibold uppercase tracking-wider">P&L</th>
+              <th className="text-left py-3 px-4 text-text-secondary text-label font-semibold uppercase tracking-wider">Result</th>
+              <th className="text-left py-3 px-4 text-text-secondary text-label font-semibold uppercase tracking-wider">Hold</th>
+              <th className="text-left py-3 px-4 text-text-secondary text-label font-semibold uppercase tracking-wider">Action</th>
             </tr>
           </thead>
           <tbody>
             {trades.map(trade => (
               <tr
                 key={trade.id}
-                className="border-b border-slate-700 hover:bg-slate-700/50 transition"
+                className="border-b border-dark-border hover:bg-dark-card/50 transition"
               >
-                <td className="py-3 px-4 text-slate-300">
+                <td className="py-3 px-4 text-text-secondary">
                   {formatTimeAgo(trade.timestamp)}
                 </td>
-                <td className="py-3 px-4 text-slate-300">${trade.entry_price.toFixed(2)}</td>
-                <td className="py-3 px-4 text-slate-300">${trade.exit_price.toFixed(2)}</td>
-                <td className={`py-3 px-4 font-semibold flex items-center gap-1 ${
-                  trade.pnl >= 0 ? 'text-green-400' : 'text-red-400'
+                <td className="py-3 px-4 text-text-secondary font-mono-num">${trade.entry_price.toFixed(2)}</td>
+                <td className="py-3 px-4 text-text-secondary font-mono-num">${trade.exit_price.toFixed(2)}</td>
+                <td className={`py-3 px-4 text-right font-semibold font-mono-num ${
+                  trade.pnl >= 0 ? 'text-neon-green' : 'text-alert-loss'
                 }`}>
-                  ${trade.pnl.toFixed(2)}
-                  {trade.pnl >= 0 ? (
-                    <TrendingUp className="w-4 h-4" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4" />
-                  )}
+                  <span className="flex items-center justify-end gap-1">
+                    ${trade.pnl.toFixed(2)}
+                    {trade.pnl >= 0 ? (
+                      <TrendingUp className="w-4 h-4" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4" />
+                    )}
+                  </span>
                 </td>
                 <td className="py-3 px-4">
-                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                    trade.result === 'win'
-                      ? 'bg-green-900 text-green-200'
-                      : 'bg-red-900 text-red-200'
-                  }`}>
+                  <span className={trade.result === 'win' ? 'badge-win' : 'badge-loss'}>
                     {trade.result.toUpperCase()}
                   </span>
                 </td>
-                <td className="py-3 px-4 text-slate-300">
+                <td className="py-3 px-4 text-text-secondary text-small">
                   {trade.hold_time_seconds ? `${trade.hold_time_seconds}s` : 'N/A'}
                 </td>
                 <td className="py-3 px-4">
                   <button
                     onClick={() => onAnalyze?.(trade)}
-                    className="text-yellow-500 hover:text-yellow-400 text-xs font-semibold"
+                    className="text-neon-green hover:text-neon-green-hover text-small font-semibold transition"
                   >
                     Analyze
                   </button>

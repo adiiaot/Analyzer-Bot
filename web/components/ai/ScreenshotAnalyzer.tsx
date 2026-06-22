@@ -91,21 +91,21 @@ export const ScreenshotAnalyzer = ({ onSignalReceived }: ScreenshotAnalyzerProps
   };
 
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+    <div className="bg-dark-card border border-dark-border rounded-card p-5">
       <div className="flex items-center gap-2 mb-6">
-        <Upload className="w-5 h-5 text-blue-500" />
-        <h2 className="text-white font-bold text-lg">Upload Chart Screenshot</h2>
+        <Upload className="w-5 h-5 text-neon-green" />
+        <h2 className="text-text-primary font-bold text-lg">Upload Chart Screenshot</h2>
       </div>
 
       {!preview && (
         <div
-          className="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition"
+          className="border-2 border-dashed border-dark-border rounded-card p-8 text-center cursor-pointer hover:border-neon-green transition"
           onClick={() => fileInputRef.current?.click()}
         >
-          <Upload className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-          <p className="text-slate-300 font-medium">Drag and drop your chart screenshot here</p>
-          <p className="text-slate-400 text-sm mt-1">or click to browse</p>
-          <p className="text-slate-500 text-xs mt-3">Max size: {maxSizeMB}MB</p>
+          <Upload className="w-10 h-10 text-text-tertiary mx-auto mb-3" />
+          <p className="text-text-secondary font-medium">Drag and drop your chart screenshot here</p>
+          <p className="text-text-tertiary text-body mt-1">or click to browse</p>
+          <p className="text-text-tertiary text-small mt-3">Max size: {maxSizeMB}MB</p>
           <input
             ref={fileInputRef}
             type="file"
@@ -122,13 +122,13 @@ export const ScreenshotAnalyzer = ({ onSignalReceived }: ScreenshotAnalyzerProps
             <img
               src={preview}
               alt="Chart preview"
-              className="w-full rounded-lg border border-slate-600"
+              className="w-full rounded-card border border-dark-border"
               style={{ maxHeight: '400px', objectFit: 'contain' }}
             />
             {!isLoading && !result && (
               <button
                 onClick={handleClear}
-                className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg"
+                className="absolute top-2 right-2 bg-alert-loss hover:bg-alert-loss/80 text-white p-2 rounded-btn"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -139,7 +139,7 @@ export const ScreenshotAnalyzer = ({ onSignalReceived }: ScreenshotAnalyzerProps
             <button
               onClick={handleAnalyze}
               disabled={isLoading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white font-semibold py-2 rounded transition flex items-center justify-center gap-2"
+              className="w-full bg-neon-green hover:bg-neon-green-hover disabled:bg-dark-border text-dark-bg font-semibold py-2 rounded-btn transition flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -158,9 +158,9 @@ export const ScreenshotAnalyzer = ({ onSignalReceived }: ScreenshotAnalyzerProps
       )}
 
       {error && (
-        <div className="mt-4 bg-red-900 border border-red-700 rounded-lg p-4 flex gap-3 items-start">
-          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-          <p className="text-red-200">{error}</p>
+        <div className="mt-4 bg-alert-loss/5 border border-alert-loss rounded-card p-4 flex gap-3 items-start">
+          <AlertCircle className="w-5 h-5 text-alert-loss flex-shrink-0 mt-0.5" />
+          <p className="text-alert-loss">{error}</p>
         </div>
       )}
 
@@ -179,20 +179,14 @@ const AnalysisResult = ({ result, onClear }: AnalysisResultProps) => {
   const signal = result.signal;
 
   const getVerificationColor = (score: number) => {
-    if (score >= 80) return 'text-green-400';
-    if (score >= 60) return 'text-yellow-400';
-    return 'text-red-400';
-  };
-
-  const getVerificationBg = (score: number) => {
-    if (score >= 80) return 'bg-green-900';
-    if (score >= 60) return 'bg-yellow-900';
-    return 'bg-red-900';
+    if (score >= 80) return 'text-neon-green';
+    if (score >= 60) return 'text-alert-warning';
+    return 'text-alert-loss';
   };
 
   return (
     <div className="mt-6 space-y-4">
-      <div className={`rounded-lg p-4 border ${getVerificationBg(verification.score)} border-opacity-50`}>
+      <div className={`rounded-card p-4 border ${verification.score >= 80 ? 'border-neon-green/30 bg-neon-green/5' : verification.score >= 60 ? 'border-alert-warning/30 bg-alert-warning/5' : 'border-alert-loss/30 bg-alert-loss/5'}`}>
         <div className="flex items-center gap-3 mb-3">
           {verification.score >= 60 ? (
             <CheckCircle className={`w-5 h-5 ${getVerificationColor(verification.score)}`} />
@@ -200,52 +194,52 @@ const AnalysisResult = ({ result, onClear }: AnalysisResultProps) => {
             <AlertCircle className={`w-5 h-5 ${getVerificationColor(verification.score)}`} />
           )}
           <div>
-            <p className="text-slate-300 text-sm font-medium">Verification Score</p>
-            <p className={`text-2xl font-bold ${getVerificationColor(verification.score)}`}>
+            <p className="text-text-secondary text-body font-medium">Verification Score</p>
+            <p className={`text-h2 font-bold ${getVerificationColor(verification.score)}`}>
               {verification.score}/100
             </p>
           </div>
         </div>
-        <div className="space-y-2 text-sm">
-          <p className="text-slate-400">
+        <div className="space-y-2 text-body">
+          <p className="text-text-tertiary">
             <span className="font-medium">Source:</span> {verification.data_source}
           </p>
-          <p className="text-slate-400">
+          <p className="text-text-tertiary">
             <span className="font-medium">Confidence Boost:</span> {verification.confidence_boost}
           </p>
           {verification.vision_confidence !== undefined && (
-            <p className="text-slate-400">
+            <p className="text-text-tertiary">
               <span className="font-medium">Chart Confidence:</span> {(verification.vision_confidence * 100).toFixed(0)}%
             </p>
           )}
         </div>
       </div>
 
-      <div className="bg-slate-700 rounded-lg p-4">
-        <p className="text-slate-300 font-medium mb-3">Signal Details</p>
-        <div className="space-y-2 text-sm">
+      <div className="bg-dark-sidebar rounded-card p-4">
+        <p className="text-text-secondary font-medium mb-3">Signal Details</p>
+        <div className="space-y-2 text-body">
           <div className="flex justify-between">
-            <span className="text-slate-400">Trend:</span>
-            <span className="text-white font-medium">{signal?.trend}</span>
+            <span className="text-text-tertiary">Trend:</span>
+            <span className="text-text-primary font-medium">{signal?.trend}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">Support:</span>
-            <span className="text-white font-medium">${signal?.support_level}</span>
+            <span className="text-text-tertiary">Support:</span>
+            <span className="text-text-primary font-medium font-mono-num">${signal?.support_level}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">Resistance:</span>
-            <span className="text-white font-medium">${signal?.resistance_level}</span>
+            <span className="text-text-tertiary">Resistance:</span>
+            <span className="text-text-primary font-medium font-mono-num">${signal?.resistance_level}</span>
           </div>
         </div>
       </div>
 
       {verification.discrepancies && verification.discrepancies.length > 0 && (
-        <div className="bg-slate-700 rounded-lg p-4">
-          <p className="text-slate-300 font-medium mb-3">Notes & Discrepancies</p>
-          <ul className="space-y-2 text-sm">
+        <div className="bg-dark-sidebar rounded-card p-4">
+          <p className="text-text-secondary font-medium mb-3">Notes & Discrepancies</p>
+          <ul className="space-y-2 text-body">
             {verification.discrepancies.map((disc: string, idx: number) => (
-              <li key={idx} className="text-slate-400 flex gap-2">
-                <span className="text-yellow-500">•</span>
+              <li key={idx} className="text-text-tertiary flex gap-2">
+                <span className="text-alert-warning">•</span>
                 {disc}
               </li>
             ))}
@@ -256,11 +250,11 @@ const AnalysisResult = ({ result, onClear }: AnalysisResultProps) => {
       <div className="flex gap-3">
         <button
           onClick={onClear}
-          className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 rounded transition"
+          className="flex-1 bg-dark-sidebar hover:bg-dark-card text-text-secondary font-semibold py-2 rounded-btn transition text-body"
         >
           Analyze Another
         </button>
-        <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded transition">
+        <button className="flex-1 bg-neon-green hover:bg-neon-green-hover text-dark-bg font-semibold py-2 rounded-btn transition text-body">
           Copy Signal
         </button>
       </div>
