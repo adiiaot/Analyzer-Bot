@@ -115,4 +115,8 @@ All models run via **Nvidia NIM** (free tier) — no Claude/OpenAI costs.
 
 ---
 
+**Live Dashboard:** [analyzer-dashboard-kohl.vercel.app](https://analyzer-dashboard-kohl.vercel.app)
+
+---
+
 *Built for AOT — portfolio project.*

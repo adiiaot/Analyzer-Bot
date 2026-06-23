@@ -583,6 +583,8 @@ npm run build
 # Deploy via Vercel CLI or git integration
 ```
 
+Live at: [https://analyzer-dashboard-kohl.vercel.app](https://analyzer-dashboard-kohl.vercel.app)
+
 Note: `package.json` and `package-lock.json` are gitignored — they are reproduced by `npm install` on each deploy.
 
 ### Docker
