@@ -2,7 +2,11 @@ Goal
 - Ship a polished, responsive XAU/USD trading dashboard with real-time Firestore sync, live Telegram bot integration, a quantitative 4-timeframe Mr PFX signal engine, and an AI-powered Learning Hub with chart analysis
 Constraints & Preferences
 - Color system: deep navy #080c24 base, gold #f0b429 accent, green #00e676 win, red #ff5252 loss
-- Cards: raised surface with border, theme-aware shadows via CSS variables, hover lift
+- Cards: glassmorphism (backdrop-filter blur, semi-transparent backgrounds, gradient borders with shine overlay, theme-aware shadows via CSS variables, hover lift with gold border glow)
+- Fully responsive sidebar (collapsible desktop, slide-over mobile with overlay)
+- Background: animated gradient + radial glow, body transitions smoothly between themes
+- Animations: slide-up cards, fade-in charts, shimmer overlays, float/glow-pulse on key elements
+- Scrollbars: thin, translucent, theme-adaptive
 - Fully responsive sidebar (collapsible desktop, slide-over mobile with overlay)
 - Light/dark toggle must work immediately (no flash); shadows must adapt (lighter in light mode)
 - No breaking TypeScript errors — build must compile clean
@@ -27,6 +31,7 @@ Done
 - Rewired Economic Calendar page: Uses DataContext.econEvents for live event list with impact badges, XAU direction indicators
 - Built AI Learning Hub (app/dashboard/learning/page.tsx): Full ChatGPT-like chat interface with two modes — "Learn" (text-based forex education via /api/learn) and "Analyze Chart" (screenshot upload with AI vision analysis via /api/analyze-screenshot); suggested prompts, message history, file upload with size validation, animated message UI
 - Fixed /api/analyze-screenshot route: Calls NVIDIA NIM Vision API directly with base64 image, keeps API key on server side, returns structured analysis
+- Fixed API routes permission errors: Created lib/firebase-admin.ts (Firebase Admin SDK for server-side), rewrote /api/trades, /api/stats, /api/verification-history to use Admin SDK instead of client SDK (which required auth & was blocked by security rules), added `export const dynamic = 'force-dynamic'` to prevent static rendering errors
 - Fixed SignalEntry model (models.py): Added entry_number: int = Field(default=1) to match Firestore schema and stop crash in signals_db.py
 - Fixed signal_generator.py: Passes entry_number=idx + 1 when creating SignalEntry objects
 - Fixed cache TTL bug (nvidia_vision_analyzer.py): Changed (now - t).seconds → (now - t).total_seconds() for correct TTL comparison
@@ -44,6 +49,14 @@ Done
 - Updated DOCUMENTATION.md with new architecture, handlers, env vars, deployment configs
 - Added Updates/ and AGENTS.md to .gitignore (dev-only files)
 - Fixed Firestore credential init: Added missing 'token_uri' field to credential dict in firestore/client.py — matches setup_firestore.py and stops ValueError on startup
+- Added live XAU price via /api/price route (proxies to bot's TradingView endpoint, falls back to simulated price); rewired PricePanel to fetch from it every 30s
+- Added subscribeJournalEntries to firebase.ts; wired up data-context.tsx to stream journal + econCalendar from Firestore
+- Installed firebase-admin; created lib/firebase-admin.ts for server-side Firestore access
+- Rewrote globals.css with glassmorphism: backdrop-filter blur, semi-transparent glass backgrounds, gradient overlays, shine effects, animated gradient+radial body bg, shimmer/float/glow-pulse animations, smooth scroll
+- Updated tailwind.config.js with new animation keyframes (shimmer, float, glow-pulse, slide-down, slide-left, slide-right)
+- Updated Card.tsx with glass variant; updated all dashboard components (Sidebar, Navbar, PricePanel, QuickStats, TradingChart, TradingAccountCard, OpenPositionsTable, SignalFeed, SignalCard, MarketSentiment, Table) with glass styling
+- Updated all sub-pages (analytics, signals, journal, economic-calendar, learning, settings, risk-calculator) to use glass-card instead of bg-surface-overlay
+- Added /api/price route to bot backend (routers/price.py) proxying to TradingViewClient
 In Progress
 - (none)
 Blocked
