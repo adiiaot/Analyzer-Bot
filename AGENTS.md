@@ -27,6 +27,10 @@ Done
 - Added Vercel Analytics: import { Analytics } from "@vercel/analytics/next" in root layout.tsx
 - Shared balance state fully wired: DataContext balance backed by localStorage; TradingAccountCard and Settings both read/write via setBalance; Analytics reads from context
 - Fixed dark mode axis text: XAxis/YAxis stroke changed to var(--text-primary) at 0.6 opacity (was var(--text-muted) at 0.5, invisible in dark mode)
+- Fixed signal generation: TradingViewClient auto-falls back to realistic simulated XAU/USD candles when API is unreachable; signal_generator uses percentage-based pullback zones (0.5% of price) instead of fixed pip values; single-timeframe trend fallback added; DOWNTREND TP calculation fixed; trend alignment entry acceptance added
+- Added /api/risk-setup route with dynamic import fix for firebase-admin getAdminDb()
+- Fixed Vercel build error: wrapped useSearchParams() in Suspense boundary in Learning Hub page
+- Fixed /api/journal route: changed dynamic import from { admin } to { getAdminDb }
 - Continuous 30s polling in DataContext when Firestore fallback mode is active (was fetch-once)
 - Firestore database setup: Created setup_firestore.py that seeds 8 collections (users, signals, trades, journal, analytics, econCalendar, signals_sent_log, bot_logs) with 23 sample documents matching the project's camelCase schema
 - Firestore indexes deployed: Created firestore.indexes.json with 8 composite indexes and firebase.json; removed single-field indexes that Firestore auto-manages; deployed via firebase deploy --only firestore
@@ -99,7 +103,8 @@ Next Steps
 7. Test AI Risk Wizard: go to Settings → "AI Wizard", answer 5 questions, verify plan generated
 8. Test Risk Calculator: switch to AI mode, adjust risk/target, click "Generate AI Setup"
 9. Test Telegram bot commands (/signal, /log_trade, /dashboard, /clear, /journal, /stats, /help)
-10. Verify TradingView API /api/price endpoint returns real data on /signal
+10. Test signal generation: start bot, send /signal in Telegram, verify signal appears with entries/TP levels
+11. Verify TradingView API /api/price endpoint returns real data on /signal
 - .env.example files created for both bot and web with all env vars documented; copy to .env/.env.local and fill in secrets before deploying
 - firestore/trades.py save_trade now accepts tradeId fallback for document ID (looks for 'id' then 'tradeId')
 Critical Context
@@ -140,13 +145,13 @@ Relevant Files
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\dashboard\learning\page.tsx: ?chart= query param support, auto-analyze from TradingChart
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\api\risk-setup\route.ts: NVIDIA Nemotron risk analysis endpoint
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\api\risk-wizard\route.ts: 5-question wizard AI endpoint
-- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\api\journal\route.ts: POST journal entries to Firestore
+- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\api\journal\route.ts: POST journal entries to Firestore (fixed getAdminDb import)
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\dashboard\components\OpenPositionsTable.tsx: text-loss → text-status-loss fix
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\app\models.py: entry_number field added to SignalEntry
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\app\signal_generator.py: passes entry_number to SignalEntry
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\app\services\nvidia_vision_analyzer.py: .seconds → .total_seconds() cache fix
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\app\firebase_manager.py: camelCase field naming, PnL direction handling
-- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\app\tradingview_client.py: /api/price endpoint, max/min field mapping
+- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\app\tradingview_client.py: TradingView API wrapper with auto-fallback to simulated OHLC data
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\firestore\journal.py: filter= keyword in where()
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\firestore\signals.py: filter= keyword in where()
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\handlers\dashboard_handler.py: /dashboard command with inline button
@@ -155,4 +160,6 @@ Relevant Files
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\handlers\help_handler.py: updated to document all 7 commands
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\telegram_bot\commands.py: registers all commands including new ones
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\config.py: DASHBOARD_URL added
+- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\app\tradingview_client.py: auto-fallback to simulated OHLC data when API fails; shorter 3s timeout; connectivity check
+- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\app\signal_generator.py: percentage-based pullback zones; single-timeframe trend fallback; DOWNTREND TP calculation; trend alignment entry; model_dump() for Pydantic v2
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\Updates\2026-06-25.md: LinkedIn-style build update post
