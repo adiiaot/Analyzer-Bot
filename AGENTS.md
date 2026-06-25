@@ -16,6 +16,18 @@ Constraints & Preferences
 - Only essential settings: balance editing + risk parameter calculation
 Progress
 Done
+- Replaced TradingChart line chart with candlestick chart using custom SVG candles; axis text uses var(--text-primary) for visibility in both themes; added "Analyze with AI" button that navigates to Learning Hub with encoded chart data
+- Made Journal functional: Added "New Entry" button → full modal form (pair, direction, entry/exit price, pips, P&L, setup notes, emotion, tag); saves via /api/journal POST; added tag filter buttons with active state
+- Fixed Economic Calendar: XAU keyword filter (gold, XAU, GDP, PCE, CPI, Fed, FOMC, NFP, etc.) applied to Firestore events; added 5 DEFAULT_XAU_EVENTS fallback with reason descriptions (e.g. "Key inflation gauge, directly affects gold")
+- Fixed Analytics page: Hardcoded $5245.50 balance replaced with shared balance from useDashboardData()
+- Added AI Risk Setup Wizard in Settings: 5-question flow (style, experience, goal, risk tolerance, hours) → calls /api/risk-wizard (NVIDIA Nemotron) → returns personalized plan
+- Replaced Risk Calculator formula with AI-powered mode: /api/risk-setup endpoint calls NVIDIA Nemotron-4 340B; includes Manual/AI mode toggle; results show Risk Amount, Position Size, R/R Ratio, Target Return
+- Added 3 new API routes: /api/risk-setup (risk calc with AI analysis), /api/risk-wizard (5-question wizard), /api/journal (POST to Firestore)
+- Added chart context support: DataContext now has chartContext/setChartState; Learning Hub reads ?chart= query param, auto-switches to Analyze mode, sends chart summary to AI
+- Added Vercel Analytics: import { Analytics } from "@vercel/analytics/next" in root layout.tsx
+- Shared balance state fully wired: DataContext balance backed by localStorage; TradingAccountCard and Settings both read/write via setBalance; Analytics reads from context
+- Fixed dark mode axis text: XAxis/YAxis stroke changed to var(--text-primary) at 0.6 opacity (was var(--text-muted) at 0.5, invisible in dark mode)
+- Continuous 30s polling in DataContext when Firestore fallback mode is active (was fetch-once)
 - Firestore database setup: Created setup_firestore.py that seeds 8 collections (users, signals, trades, journal, analytics, econCalendar, signals_sent_log, bot_logs) with 23 sample documents matching the project's camelCase schema
 - Firestore indexes deployed: Created firestore.indexes.json with 8 composite indexes and firebase.json; removed single-field indexes that Firestore auto-manages; deployed via firebase deploy --only firestore
 - Security rules deployed: Created firestore.rules with per-user data isolation (users own trades/journal, signals public-read/admin-write, bot_logs admin-only); deployed via firebase deploy --only firestore
@@ -67,6 +79,11 @@ In Progress
 Blocked
 - (none)
 Key Decisions
+- Candlestick chart uses custom SVG shapes (Bar shape + line for wick) inside Recharts BarChart since Recharts has no built-in candlestick; OHLC data generated client-side with realistic XAU price ~$4,073; volume bars colored green/red per candle direction
+- /api/risk-setup and /api/risk-wizard call NVIDIA Nemotron-4 340B with structured prompts; fall back to calculated defaults if API key missing or call fails — never crash
+- Learning Hub reads ?chart= query param on mount; uses a ref (chartAnalysed) to prevent double-send on React StrictMode re-renders; auto-sends chart summary to /api/learn for text analysis (not vision, since chart data is numeric)
+- Economic Calendar uses keyword matching against a XAU_KEYWORDS list to filter Firestore events; falls back to 5 hardcoded XAU-relevant events (Core PCE, Chicago PMI, Jobless Claims, Powell Speech, Treasury Yield) when Firestore is empty
+- Journal entries saved to Firestore via /api/journal POST; locally appended to state optimistically so they appear immediately
 - Firestore fields unified to camelCase (Python backend, setup script, TypeScript types all agree) — eliminates the dual-persistence formatting mismatch between old snake_case firebase_manager.py and camelCase signals_db.py
 - DataContext extended with econEvents + journalEntries so all pages use the same pattern; individual pages no longer hardcode mock data inline
 - /api/analyze-screenshot calls NVIDIA NIM directly from Next.js API route instead of proxying through bot backend (bot never had that endpoint), keeping the API key server-side
@@ -76,10 +93,13 @@ Next Steps
 1. Run firebase deploy --only firestore to re-deploy indexes/rules after any future changes
 2. Start bot: cd bot && uvicorn main:app --reload --port 8000
 3. Start dashboard: cd web && npm run dev
-4. Test AI Learning Hub: open /dashboard/learning, ask questions, upload a chart screenshot
-5. Verify composite indexes are building in Firebase Console → Firestore → Indexes (may take 1-2 minutes each)
-6. Test Telegram bot commands (/signal, /log_trade, /dashboard, /clear, /journal, /stats, /help)
-7. Verify TradingView API /api/price endpoint returns real data on /signal
+4. Test candlestick chart: open /dashboard, verify candles render, toggle timeframes, click "Analyze with AI"
+5. Test Journal: click "New Entry", fill form, save, verify entry appears
+6. Test Economic Calendar: verify XAU-relevant events display (Core PCE, Powell Speech, etc.)
+7. Test AI Risk Wizard: go to Settings → "AI Wizard", answer 5 questions, verify plan generated
+8. Test Risk Calculator: switch to AI mode, adjust risk/target, click "Generate AI Setup"
+9. Test Telegram bot commands (/signal, /log_trade, /dashboard, /clear, /journal, /stats, /help)
+10. Verify TradingView API /api/price endpoint returns real data on /signal
 - .env.example files created for both bot and web with all env vars documented; copy to .env/.env.local and fill in secrets before deploying
 - firestore/trades.py save_trade now accepts tradeId fallback for document ID (looks for 'id' then 'tradeId')
 Critical Context
@@ -90,8 +110,10 @@ Critical Context
 - All dashboard pages now source data from DataContext with fallback to constants.ts when Firestore is empty
 - The old text-profit/text-loss/text-gold/text-info classes are gone; use text-status-win/text-status-loss/text-accent-gold/text-status-info
 - CSS var(--profit) / var(--loss) / var(--gold) / var(--card) still work via aliases for Recharts compatibility
-- AI Learning Hub uses two API routes: /api/learn (NVIDIA text model for education) and /api/analyze-screenshot (NVIDIA Vision model for chart analysis)
+- AI Learning Hub uses three API routes: /api/learn (NVIDIA text model for education), /api/analyze-screenshot (NVIDIA Vision model for chart analysis), and query param ?chart= for chart-to-text analysis
+- Risk Calculator uses manual formula OR /api/risk-setup (NVIDIA Nemotron for AI analysis); Settings wizard uses /api/risk-wizard (5-question flow)
 - setup_firestore.py is idempotent — re-run it anytime to reset seed data
+- Balance is persisted to localStorage and shared across all pages via DataContext
 Relevant Files
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\setup_firestore.py: seeds 8 collections with 23 documents, prints index/rules instructions
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\firestore.indexes.json: 8 composite indexes for signals, trades, journal, analytics, signals_sent_log, bot_logs
@@ -109,6 +131,16 @@ Relevant Files
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\dashboard\economic-calendar\page.tsx: live econ events from DataContext, impact badges
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\dashboard\learning\page.tsx: ChatGPT-like AI chat with Learn/Analyze modes, chart upload, suggested prompts
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\api\analyze-screenshot\route.ts: calls NVIDIA Vision model directly with base64 image
+- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\dashboard\components\TradingChart.tsx: candlestick chart with custom SVG candles, Analyze with AI button, var(--text-primary) axis
+- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\dashboard\journal\page.tsx: modal form for journal entries, tag filtering, save via API
+- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\dashboard\economic-calendar\page.tsx: XAU keyword filter, DEFAULT_XAU_EVENTS fallback with reasons
+- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\dashboard\analytics\page.tsx: balance from DataContext instead of hardcoded 5245.50
+- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\dashboard\settings\page.tsx: AI Risk Wizard (5-step), shared balance with DataContext
+- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\dashboard\risk-calculator\page.tsx: Manual/AI toggle, /api/risk-setup AI analysis
+- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\dashboard\learning\page.tsx: ?chart= query param support, auto-analyze from TradingChart
+- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\api\risk-setup\route.ts: NVIDIA Nemotron risk analysis endpoint
+- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\api\risk-wizard\route.ts: 5-question wizard AI endpoint
+- C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\api\journal\route.ts: POST journal entries to Firestore
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\app\dashboard\components\OpenPositionsTable.tsx: text-loss → text-status-loss fix
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\app\models.py: entry_number field added to SignalEntry
 - C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\app\signal_generator.py: passes entry_number to SignalEntry
