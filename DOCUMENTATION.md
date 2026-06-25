@@ -12,14 +12,15 @@
 3. [Bot — FastAPI Backend](#3-bot--fastapi-backend)
    - 3.1 Entry Point & Configuration
    - 3.2 Data Models
-   - 3.3 Signal Generator (4-Timeframe Engine)
-   - 3.4 TradingView Client
-   - 3.5 Firebase Manager
-   - 3.6 Telegram Handler
-   - 3.7 Nvidia Vision Analyzer
-   - 3.8 Multi-Model Pipeline
-   - 3.9 API Routers
-   - 3.10 Utility Modules
+   - 3.3 Firestore Data Layer (per-collection classes)
+   - 3.4 Signal Generator (4-Timeframe Engine)
+   - 3.5 TradingView Client
+   - 3.6 Firebase Manager (legacy)
+   - 3.7 Telegram Command Handlers
+   - 3.8 Nvidia Vision Analyzer
+   - 3.9 Multi-Model Pipeline
+   - 3.10 API Routers
+   - 3.11 Utility Modules
 4. [Dashboard — Next.js Frontend](#4-dashboard--nextjs-frontend)
    - 4.1 Pages
    - 4.2 API Routes
@@ -131,23 +132,42 @@ root/
 ├── DOCUMENTATION.md
 
 ├── bot/                              # FastAPI Python backend
-│   ├── main.py                       # Entry point, app factory, exception handlers
+│   ├── main.py                       # Entry point, lifespan, FastAPI app factory
 │   ├── config.py                     # All env-var configuration
 │   ├── requirements.txt
 │   ├── openapi.yaml                  # OpenAPI 3.0 specification
-│   ├── app/
+│   ├── railway.json                  # Railway deployment config (Nixpacks)
+│   ├── setup_firestore.py            # Seed script: 8 collections, 23 documents
+│   ├── firestore/                    # Firestore data-access layer (per collection)
+│   │   ├── client.py                 # Singleton Firestore client
+│   │   ├── signals.py                # SignalsDB — save/query/update signals
+│   │   ├── trades.py                 # TradesDB — save/query trades
+│   │   ├── journal.py                # JournalDB — save/query journal entries
+│   │   └── logs.py                   # LogsDB — command audit logging
+│   ├── handlers/                     # Telegram command handlers
+│   │   ├── signal_handler.py         # /signal — generate trading signal
+│   │   ├── log_trade_handler.py      # /log_trade — 4-step conversation flow
+│   │   ├── journal_handler.py        # /journal — free-text journal entry
+│   │   ├── stats_handler.py          # /stats — aggregated trading statistics
+│   │   ├── dashboard_handler.py      # /dashboard — inline button to web dashboard
+│   │   ├── clear_handler.py          # /clear — reset chat history
+│   │   └── help_handler.py           # /help — list all commands
+│   ├── telegram_bot/
+│   │   └── commands.py               # Register all handlers with PTB Application
+│   ├── app/                          # Legacy service layer (kept for REST API)
 │   │   ├── models.py                 # Pydantic schemas (Signal, TradeLog, Stats, etc.)
-│   │   ├── signal_generator.py       # Core 4-timeframe signal engine
+│   │   ├── signal_generator.py       # Core 4-timeframe Mr PFX signal engine
 │   │   ├── tradingview_client.py     # RapidAPI TradingView data wrapper
 │   │   ├── firebase_manager.py       # Firestore singleton (CRUD for signals/trades)
-│   │   ├── telegram_handler.py       # 6 commands + photo handler
+│   │   ├── telegram_handler.py       # Legacy handler (not registered — kept for reference)
 │   │   └── services/
 │   │       ├── nvidia_vision_analyzer.py   # Llama 3.2 11B Vision chart analysis
 │   │       └── multi_model_pipeline.py     # API + vision dual verification
 │   ├── routers/
 │   │   ├── signals.py                # POST/GET /api/signal, GET /api/api-stats
 │   │   ├── trades.py                 # POST /api/trades, GET /api/trades, GET /api/stats
-│   │   └── telegram.py               # POST /webhook/telegram (stub)
+│   │   ├── telegram.py               # POST /webhook/telegram (stub)
+│   │   └── admin.py                  # Admin health/status endpoints
 │   └── utils/
 │       ├── logger.py                 # Logging setup (stdout, structured format)
 │       ├── validators.py             # Price + trade-arg validation
@@ -155,31 +175,37 @@ root/
 
 ├── web/                              # Next.js 14 frontend dashboard
 │   ├── next.config.js
+│   ├── vercel.json                   # Vercel deployment config
 │   ├── tailwind.config.ts
 │   ├── tsconfig.json
-│   ├── .env.local                    # (not tracked) — API keys + Firebase config
+│   ├── .env.example                  # Template for Vercel env vars
 │   ├── app/
 │   │   ├── layout.tsx                # Root layout (dark theme shell)
 │   │   ├── page.tsx                  # Landing page with Enter button
 │   │   ├── dashboard/
 │   │   │   ├── page.tsx              # Overview — StatsCards + PerformanceChart + recent trades
+│   │   │   ├── signals/page.tsx      # Active signals + signal history table
 │   │   │   ├── trades/page.tsx       # Trade log with filters
+│   │   │   ├── journal/page.tsx      # Trading journal entries with tag filters
 │   │   │   ├── analytics/page.tsx    # 4-tab: Performance / Screenshot / Verification / Insights
-│   │   │   └── learning/page.tsx     # Nvidia-powered Q&A chatbot
+│   │   │   ├── economic-calendar/page.tsx  # Live economic events with impact badges
+│   │   │   └── learning/page.tsx     # Nvidia-powered Q&A chatbot + chart upload
 │   │   └── api/
 │   │       ├── trades/route.ts              # GET trades from Firestore
 │   │       ├── stats/route.ts               # GET aggregated stats
 │   │       ├── analyze-trade-nvidia/route.ts# POST Nvidia 70B trade analysis
-│   │       ├── analyze-screenshot/route.ts  # POST proxy to bot backend
+│   │       ├── analyze-screenshot/route.ts  # POST proxy to Nvidia Vision API directly
 │   │       ├── learn/route.ts               # POST Nvidia chatbot answer
 │   │       └── verification-history/route.ts# GET mock verification metrics
 │   ├── components/
 │   │   ├── layout/
 │   │   │   ├── Header.tsx
-│   │   │   └── Sidebar.tsx
+│   │   │   ├── Sidebar.tsx
+│   │   │   └── MobileNav.tsx
 │   │   ├── dashboard/
 │   │   │   ├── StatsCards.tsx
-│   │   │   └── PerformanceChart.tsx
+│   │   │   ├── PerformanceChart.tsx
+│   │   │   └── OpenPositionsTable.tsx
 │   │   ├── trades/
 │   │   │   ├── TradeTable.tsx
 │   │   │   └── TradeFilters.tsx
@@ -195,10 +221,13 @@ root/
 │   │       └── Spinner.tsx
 │   ├── lib/
 │   │   ├── firebase.ts               # Firebase Web SDK init + trade/stats queries
+│   │   ├── data-context.tsx          # React context providing live Firestore data
+│   │   ├── constants.ts              # Fallback mock data for empty Firestore
+│   │   ├── hooks.ts                  # Custom hooks for real-time data
 │   │   ├── api-client.ts             # Bot backend HTTP client helpers
 │   │   └── formatters.ts             # Date, currency formatting
 │   └── types/
-│       └── index.ts                  # TypeScript interfaces
+│       └── index.ts                  # TypeScript interfaces (Trade, Signal, SignalEntry, etc.)
 ```
 
 ---
@@ -234,7 +263,20 @@ All Pydantic v2 models:
 | `TradingStats` | Computed statistics (wins, losses, win rate, P&L, profit factor, streaks) |
 | `TelegramMessage` | Incoming Telegram message stub |
 
-### 3.3 Signal Generator (`bot/app/signal_generator.py`)
+### 3.3 Firestore Data Layer (`bot/firestore/`)
+
+Each Firestore collection has a dedicated wrapper class:
+
+| File | Class | Collection | Key Methods |
+|------|-------|------------|-------------|
+| `signals.py` | `SignalsDB` | `signals` | `save_signal()`, `get_latest_signals()`, `update_signal_status()` |
+| `trades.py` | `TradesDB` | `trades` | `save_trade()`, `get_all_trades()` |
+| `journal.py` | `JournalDB` | `journal` | `save_journal_entry()`, `get_user_journal()` |
+| `logs.py` | `LogsDB` | `signals_sent_log` | `log_command()` — audit trail for every bot command |
+
+All documents use **camelCase** field names matching the dashboard's TypeScript types. Fields like `entryPrice`, `supportLevel`, `entryNumber`, `tpPips`, `autoClose` are consistent across Python backends, seed scripts, and the Next.js frontend.
+
+### 3.4 Signal Generator (`bot/app/signal_generator.py`)
 
 The core business logic implementing a 4-timeframe Mr PFX scalping framework.
 
@@ -279,18 +321,19 @@ Key methods:
 - `_detect_reversal_candle(df)` — Pin bar or engulfing detection.
 - `_build_signal(trend, entry_price, support, resistance)` — Assembles the final Signal.
 
-### 3.4 TradingView Client (`bot/app/tradingview_client.py`)
+### 3.5 TradingView Client (`bot/app/tradingview_client.py`)
 
 Wrapper for the [TradingView Data API on RapidAPI](https://rapidapi.com/tradingview-tradingview-default/api/tradingview-data1).
 
-- Fetches OHLCV candle data for any timeframe (`1m`, `5m`, `15m`, `1h`, `4h`, `1d`).
+- Fetches OHLCV candle data using `GET /api/price/{symbol}` endpoint with `timeframe` and `range` params.
+- Response fields: `time`, `open`, `close`, `max` (high), `min` (low), `volume` inside `data.history[]`.
 - Tracks request count against a configurable rate limit (default 150/month — free-tier cap).
 - Returns `List[CandleData]` or `None` on rate-limit hit / API error.
 - `get_request_count()` returns `{used, limit, remaining}` for monitoring.
 
-### 3.5 Firebase Manager (`bot/app/firebase_manager.py`)
+### 3.7 Firebase Manager (`bot/app/firebase_manager.py`)
 
-Singleton pattern — one `FirebaseManager` instance per process.
+Singleton pattern — one `FirebaseManager` instance per process. Note: new commands use the per-collection classes in `bot/firestore/` instead. This class is kept for the REST API routers.
 
 | Method | Description |
 |--------|-------------|
@@ -300,23 +343,25 @@ Singleton pattern — one `FirebaseManager` instance per process.
 | `get_all_trades()` | Returns all trades sorted by timestamp DESC |
 | `calculate_stats()` | Computes win rate, total P&L, profit factor, avg win/loss, max streaks |
 
-### 3.6 Telegram Handler (`bot/app/telegram_handler.py`)
+### 3.6 Telegram Command Handlers (`bot/handlers/`)
 
-Uses `python-telegram-bot` v20+ (Application-based, not Updater).
+Commands are implemented as individual handler classes in `bot/handlers/` and registered via `telegram_bot/commands.py` using `python-telegram-bot` v20+ `Application.add_handler()`.
 
 **Commands:**
 
-| Command | Handler | Description |
-|---------|---------|-------------|
-| `/signal` | `signal_command` | Generate API-based signal, save, return formatted message |
-| `/analyze` | `analyze_command` | Prompt user to upload a chart screenshot |
-| `/log_trade` | `log_trade_command` | Parse `entry:PRICE exit:PRICE result:win\|loss`, log trade |
-| `/stats` | `stats_command` | Display win rate, P&L, profit factor, averages |
-| `/dashboard` | `dashboard_command` | Inline keyboard button to web dashboard |
-| `/help` | `help_command` | List all commands with usage examples |
-| *(photo)* | `handle_screenshot` | Download image, base64-encode, run through `MultiModelPipeline` |
+| Command | Handler File | Description |
+|---------|--------------|-------------|
+| `/signal` | `signal_handler.py` | Generate API-based signal via 4-TF Mr PFX engine, save to Firestore, return formatted message |
+| `/log_trade` | `log_trade_handler.py` | 4-step conversation flow: entry price → exit price → result (Win/Loss) → confirm. Calculates PnL and persists to Firestore `trades` collection |
+| `/journal` | `journal_handler.py` | Conversation: free-text entry, saved to Firestore `journal` collection |
+| `/stats` | `stats_handler.py` | Display total signals, win rate, P&L, and latest signals from Firestore |
+| `/dashboard` | `dashboard_handler.py` | Inline keyboard button linking to the web dashboard at `DASHBOARD_URL` |
+| `/clear` | `clear_handler.py` | Delete bot messages and send a fresh-start message |
+| `/help` | `help_handler.py` | List all 7 commands with usage examples |
 
-**Bot start:** `start_bot()` builds the `Application`, registers all handlers, and calls `app.run_polling()`.
+**Registration** (`bot/telegram_bot/commands.py`): The `register_commands()` function is called during FastAPI's `lifespan` startup. It builds a `ConversationHandler` for `/log_trade` and `/journal`, registers simple `CommandHandler`s for the rest, and adds them to the `Application`.
+
+**Legacy** (`bot/app/telegram_handler.py`): The old monolithic `TelegramBotHandler` class with 6 commands + screenshot analysis is preserved but not registered. The new modular architecture is preferred.
 
 ### 3.7 Nvidia Vision Analyzer (`bot/app/services/nvidia_vision_analyzer.py`)
 
@@ -507,26 +552,31 @@ TELEGRAM_BOT_TOKEN=...
 TELEGRAM_CHAT_ID=aot_analyzer_bot
 TRADINGVIEW_API_KEY=...
 TRADINGVIEW_API_HOST=tradingview-data1.p.rapidapi.com
+FIREBASE_CREDENTIALS_PATH=../aot-analyzer-bot-firebase-adminsdk-xxx.json
+# OR individual fields:
 FIREBASE_PROJECT_ID=aot-analyzer-bot
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 FIREBASE_CLIENT_EMAIL=firebase-adminsdk-...@aot-analyzer-bot.iam.gserviceaccount.com
 NVIDIA_NIM_API_KEY=nvapi-...
 DEBUG=True
 LOG_LEVEL=INFO
+DASHBOARD_URL=https://analyzer-dashboard-kohl.vercel.app
 ```
 
 **`web/.env.local`** (required vars):
 
 ```ini
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=aot-analyzer-bot
 NEXT_PUBLIC_FIREBASE_API_KEY=...
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=aot-analyzer-bot.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=aot-analyzer-bot
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=aot-analyzer-bot.appspot.com
+NEXT_PUBLIC_FIREBASE_DATABASE_URL=https://aot-analyzer-bot.firebaseio.com
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=aot-analyzer-bot.firebasestorage.app
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_APP_ID=...
-NEXT_PUBLIC_BOT_API_URL=http://localhost:8000
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=...
+NEXT_PUBLIC_BOT_API_URL=https://your-bot.up.railway.app
 NEXT_PUBLIC_NVIDIA_API_KEY=nvapi-...
-NEXT_PUBLIC_NVIDIA_NIM_API_URL=https://integrate.api.nvidia.com/v1
+NEXT_PUBLIC_NVIDIA_MODEL=nvidia/llama-3.1-nemotron-nano-vl-8b-v1
 ```
 
 ### Config Constants (Hard Defaults)
@@ -547,6 +597,7 @@ Defined in `bot/config.py`:
 | `CONFIDENCE_BOOST_HIGH` | 15 | +15% for alignment ≥ 80 |
 | `CONFIDENCE_BOOST_MEDIUM` | 5 | +5% for alignment ≥ 60 |
 | `CONFIDENCE_PENALTY` | 10 | -10% for alignment < 40 |
+| `DASHBOARD_URL` | `https://analyzer-dashboard-kohl.vercel.app` | Web dashboard URL for /dashboard command |
 
 ---
 
@@ -557,16 +608,16 @@ Defined in `bot/config.py`:
 **Locally:**
 ```bash
 cd bot
+python -m venv venv
+venv\Scripts\activate   # Windows
 pip install -r requirements.txt
-uvicorn main:app --reload
+uvicorn main:app --reload --port 8000
 ```
 
-**Production (Railway / Render / any Docker host):**
-```bash
-uvicorn main:app --host 0.0.0.0 --port 8000
-```
+**Production (Railway — Nixpacks):**
+A `bot/railway.json` is provided with Nixpacks build config. Set all env vars in the Railway dashboard. The health check endpoint is `/health`.
 
-The Telegram bot runs in polling mode — no webhook setup needed. The webhook router (`/webhook/telegram`) is a stub.
+The Telegram bot runs in polling mode (no webhook needed). The webhook router (`/webhook/telegram`) is a stub.
 
 ### Dashboard (Next.js)
 
@@ -578,26 +629,21 @@ npm run dev
 ```
 
 **Production (Vercel):**
+A `web/vercel.json` is provided. Set all `NEXT_PUBLIC_*` env vars in the Vercel dashboard. Deploy via git integration or Vercel CLI.
+
 ```bash
-npm run build
-# Deploy via Vercel CLI or git integration
+vercel --prod
 ```
 
 Live at: [https://analyzer-dashboard-kohl.vercel.app](https://analyzer-dashboard-kohl.vercel.app)
 
-Note: `package.json` and `package-lock.json` are gitignored — they are reproduced by `npm install` on each deploy.
+### Environment Templates
 
-### Docker
+Copy the template files and fill in your values:
 
-A `Dockerfile` is expected at `bot/` (not yet created). Example:
-
-```dockerfile
-FROM python:3.14-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+```bash
+cp bot/.env.example bot/.env        # then edit bot/.env
+cp web/.env.example web/.env.local  # then edit web/.env.local
 ```
 
 ---
@@ -765,20 +811,25 @@ Returns mock verification data (score trends, mode distribution). `{success, dat
 | `CONFIDENCE_BOOST_HIGH` | No | High alignment bonus % (default 15) |
 | `CONFIDENCE_BOOST_MEDIUM` | No | Medium alignment bonus % (default 5) |
 | `CONFIDENCE_PENALTY` | No | Low alignment penalty % (default 10) |
+| `DASHBOARD_URL` | No | Web dashboard URL for /dashboard command (default: `https://analyzer-dashboard-kohl.vercel.app`) |
 
 ### Dashboard (`web/.env.local`)
 
 | Variable | Required | Description |
 |----------|----------|-------------|
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Yes | `aot-analyzer-bot` |
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | Yes | Firebase Web SDK API key |
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Yes | `<project>.firebaseapp.com` |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Yes | `aot-analyzer-bot` |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Yes | `<project>.appspot.com` |
+| `NEXT_PUBLIC_FIREBASE_DATABASE_URL` | Yes | `https://<project>.firebaseio.com` |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Yes | `<project>.firebasestorage.app` |
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Yes | Firebase sender ID |
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | Yes | Firebase app ID |
-| `NEXT_PUBLIC_BOT_API_URL` | Yes | Backend URL (`http://localhost:8000`) |
+| `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` | No | Firebase measurement ID (Analytics) |
+| `NEXT_PUBLIC_BOT_API_URL` | Yes | Bot backend URL (e.g. `https://your-bot.up.railway.app`) |
 | `NEXT_PUBLIC_NVIDIA_API_KEY` | Yes | Nvidia NIM API key |
-| `NEXT_PUBLIC_NVIDIA_NIM_API_URL` | No | NIM base URL (default: `https://integrate.api.nvidia.com/v1`) |
+| `NEXT_PUBLIC_NVIDIA_MODEL` | No | Nvidia vision model name (default: `nvidia/llama-3.1-nemotron-nano-vl-8b-v1`) |
+| `NEXT_PUBLIC_MAX_SCREENSHOT_SIZE_MB` | No | Upload size limit in MB (default 10) |
+| `NEXT_PUBLIC_ALLOWED_IMAGE_TYPES` | No | Comma-separated MIME types (default: `image/png,image/jpeg,image/webp`) |
 
 ---
 

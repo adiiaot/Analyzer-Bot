@@ -5,6 +5,12 @@ OPENCODE_BOT_SCREENSHOT_PROMPT.md
 OPENCODE_DASHBOARD_SCREENSHOT_PROMPT.md
 QUICK_START_GUIDE.md
 
+# Agent context (dev only, not for deployment)
+AGENTS.md
+
+# Build updates (LinkedIn-style posts, dev only)
+Updates/
+
 # Environment variables
 .env
 .env.local
