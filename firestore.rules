@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users own their data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Signals - read by authenticated users, write only by admin
+    match /signals/{signalId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+    }
+
+    // Trades - users own their trades
+    match /trades/{tradeId} {
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Journal - users own their entries
+    match /journal/{entryId} {
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Analytics - users see their own
+    match /analytics/{analyticsId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+    }
+
+    // Economic Calendar - public read, admin write
+    match /econCalendar/{eventId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+    }
+
+    // Signals Sent Log - users see their own
+    match /signals_sent_log/{logId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+    }
+
+    // Bot Logs - admin only
+    match /bot_logs/{logId} {
+      allow read, write: if request.auth != null && request.auth.token.isAdmin == true;
+    }
+  }
+}

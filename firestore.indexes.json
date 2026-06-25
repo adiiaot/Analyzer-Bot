@@ -51,24 +51,10 @@
       ]
     },
     {
-      "collectionGroup": "econCalendar",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "timestamp", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "signals_sent_log",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "timestamp", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "bot_logs",
-      "queryScope": "COLLECTION",
-      "fields": [
         { "fieldPath": "timestamp", "order": "DESCENDING" }
       ]
     },
