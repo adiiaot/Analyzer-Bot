@@ -57,6 +57,11 @@ Done
 - Updated Card.tsx with glass variant; updated all dashboard components (Sidebar, Navbar, PricePanel, QuickStats, TradingChart, TradingAccountCard, OpenPositionsTable, SignalFeed, SignalCard, MarketSentiment, Table) with glass styling
 - Updated all sub-pages (analytics, signals, journal, economic-calendar, learning, settings, risk-calculator) to use glass-card instead of bg-surface-overlay
 - Added /api/price route to bot backend (routers/price.py) proxying to TradingViewClient
+- Fixed client-side Firestore subscriptions: subscribeTrades/subscribeSignals now have error callbacks that trigger API route fallback
+- Updated data-context.tsx to fetch from /api/trades and /api/signals (Admin SDK backed) when Firestore client SDK permissions fail
+- Added /api/signals route (Admin SDK) mirroring /api/trades pattern
+- Fixed /api/price fallback to realistic XAU price ~$4,073 (was $2,335)
+- Updated service account filename from 96f7cb0ea5 to 6ddb184d0e in firebase_manager.py and firebase-admin.ts
 In Progress
 - (none)
 Blocked
