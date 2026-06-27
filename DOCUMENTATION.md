@@ -5,6 +5,17 @@
 
 ---
 
+## Portfolio Links
+
+| Resource | URL |
+|----------|-----|
+| **Live Dashboard** | [https://analyzer-dashboard-kohl.vercel.app](https://analyzer-dashboard-kohl.vercel.app) |
+| **Telegram Bot** | [https://t.me/aot_analyzer_bot](https://t.me/aot_analyzer_bot) |
+| **Source Code (Bot)** | `C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\bot\` |
+| **Source Code (Web)** | `C:\My Workspace\Aotsecure-V1\projects\AI Systems\Analyzer Bot\web\` |
+
+---
+
 ## Table of Contents
 
 1. [Architecture Overview](#1-architecture-overview)
