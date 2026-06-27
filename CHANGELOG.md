@@ -6,7 +6,7 @@ All notable changes to the Analyzer Bot project will be documented in this file.
 
 ### Added
 - FastAPI bot backend with Telegram integration (python-telegram-bot v20+)
-- Mr PFX 4-timeframe signal generation engine:
+- 4-timeframe signal generation engine:
   - Level 1: 1H/4H trend determination (higher highs/lows)
   - Level 2: 15M support/resistance level identification
   - Level 3: 5M pullback detection with volatility check

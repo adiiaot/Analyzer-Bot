@@ -1,5 +1,5 @@
 Goal
-- Ship a polished, responsive XAU/USD trading dashboard with real-time Firestore sync, live Telegram bot integration, a quantitative 4-timeframe Mr PFX signal engine, and an AI-powered Learning Hub with chart analysis
+- Ship a polished, responsive XAU/USD trading dashboard with real-time Firestore sync, live Telegram bot integration, a quantitative 4-timeframe signal engine, and an AI-powered Learning Hub with chart analysis
 Constraints & Preferences
 - Color system: deep navy #080c24 base, gold #f0b429 accent, green #00e676 win, red #ff5252 loss
 - Cards: glassmorphism (backdrop-filter blur, semi-transparent backgrounds, gradient borders with shine overlay, theme-aware shadows via CSS variables, hover lift with gold border glow)

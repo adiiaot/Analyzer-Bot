@@ -156,7 +156,7 @@ root/
 │   │   └── commands.py               # Register all handlers with PTB Application
 │   ├── app/                          # Legacy service layer (kept for REST API)
 │   │   ├── models.py                 # Pydantic schemas (Signal, TradeLog, Stats, etc.)
-│   │   ├── signal_generator.py       # Core 4-timeframe Mr PFX signal engine
+│   │   ├── signal_generator.py       # Core 4-timeframe signal engine
 │   │   ├── tradingview_client.py     # RapidAPI TradingView data wrapper
 │   │   ├── firebase_manager.py       # Firestore singleton (CRUD for signals/trades)
 │   │   ├── telegram_handler.py       # Legacy handler (not registered — kept for reference)
@@ -278,7 +278,7 @@ All documents use **camelCase** field names matching the dashboard's TypeScript 
 
 ### 3.4 Signal Generator (`bot/app/signal_generator.py`)
 
-The core business logic implementing a 4-timeframe Mr PFX scalping framework.
+The core business logic implementing a 4-timeframe scalping framework.
 
 **Pipeline:**
 
@@ -351,7 +351,7 @@ Commands are implemented as individual handler classes in `bot/handlers/` and re
 
 | Command | Handler File | Description |
 |---------|--------------|-------------|
-| `/signal` | `signal_handler.py` | Generate API-based signal via 4-TF Mr PFX engine, save to Firestore, return formatted message |
+| `/signal` | `signal_handler.py` | Generate API-based signal via 4-TF engine, save to Firestore, return formatted message |
 | `/log_trade` | `log_trade_handler.py` | 4-step conversation flow: entry price → exit price → result (Win/Loss) → confirm. Calculates PnL and persists to Firestore `trades` collection |
 | `/journal` | `journal_handler.py` | Conversation: free-text entry, saved to Firestore `journal` collection |
 | `/stats` | `stats_handler.py` | Display total signals, win rate, P&L, and latest signals from Firestore |
